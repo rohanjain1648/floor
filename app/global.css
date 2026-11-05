@@ -281,3 +281,115 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.34);
 }
+
+/* ── Floor ────────────────────────────────────────────────────────────────
+   Broadcast-control vocabulary: a red tally light for "live", one violet
+   signature for anything the agent did, amber for audience heat. */
+:root {
+  --floor-live: 4 80% 52%;
+  --floor-agent: 252 68% 56%;
+  --floor-agent-soft: 252 90% 97%;
+  --floor-heat: 32 95% 48%;
+  --floor-ok: 152 58% 34%;
+  --floor-stage: 230 18% 7%;
+  --floor-stage-foreground: 40 30% 96%;
+}
+
+.dark {
+  --floor-live: 4 88% 62%;
+  --floor-agent: 252 92% 74%;
+  --floor-agent-soft: 252 30% 18%;
+  --floor-heat: 36 95% 58%;
+  --floor-ok: 152 52% 52%;
+}
+
+.floor-tally {
+  position: relative;
+  display: inline-flex;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: hsl(var(--floor-live));
+}
+.floor-tally[data-state="live"]::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid hsl(var(--floor-live) / 0.5);
+  animation: floor-ping 1.6s ease-out infinite;
+}
+.floor-tally[data-state="paused"] {
+  background: hsl(var(--floor-heat));
+}
+.floor-tally[data-state="ended"] {
+  background: hsl(var(--muted-foreground));
+}
+
+.floor-agent-mark {
+  color: hsl(var(--floor-agent));
+}
+
+.floor-card {
+  animation: floor-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.floor-card[data-agent-touched="true"] {
+  box-shadow: inset 2px 0 0 hsl(var(--floor-agent));
+}
+.floor-card[data-agent-fresh="true"] {
+  animation: floor-agent-flash 1.6s ease-out both;
+}
+
+.floor-stage-question {
+  animation: floor-stage-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes floor-ping {
+  0% {
+    transform: scale(0.7);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+@keyframes floor-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes floor-agent-flash {
+  0% {
+    background-color: hsl(var(--floor-agent) / 0.16);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@keyframes floor-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floor-card,
+  .floor-card[data-agent-fresh="true"],
+  .floor-stage-question,
+  .floor-tally[data-state="live"]::after {
+    animation: none;
+  }
+}
