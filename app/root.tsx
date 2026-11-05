@@ -116,6 +116,14 @@ function ThemeToggleItem() {
   );
 }
 
+function isAudiencePath(pathname: string): boolean {
+  return pathname === "/j" || pathname.startsWith("/j/");
+}
+
+function isStagePath(pathname: string): boolean {
+  return pathname.startsWith("/stage/");
+}
+
 function AppContent() {
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const navigate = useNavigate();
@@ -123,6 +131,8 @@ function AppContent() {
   const location = useLocation();
   const isChatThread = threadIdFromPath(location.pathname) !== null;
   useCommandMenuShortcut(useCallback(() => setCmdkOpen(true), []));
+  // The projector view owns the whole screen: no sidebar, header or agent panel.
+  if (isStagePath(location.pathname)) return <Outlet />;
   return (
     <>
       <CommandMenu
@@ -180,6 +190,21 @@ export default function Root() {
   // The path, not the visitor, picks the shell, so the SSR shell stays one
   // cached page per URL.
   const { pathname } = useLocation();
+  // The audience joins anonymously, so their page skips sync, navigation state
+  // and the signed-in shell.
+  if (isAudiencePath(pathname)) {
+    return (
+      <AppToolkitProvider>
+        <AppProviders
+          queryClient={queryClient}
+          isPublicPath
+          i18n={{ catalog: i18nCatalog }}
+        >
+          <Outlet />
+        </AppProviders>
+      </AppToolkitProvider>
+    );
+  }
   return (
     <AppToolkitProvider>
       <AppProviders

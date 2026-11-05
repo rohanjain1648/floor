@@ -18,13 +18,16 @@ export interface NavigationState {
   path?: string;
   publicPath?: string;
   threadId?: string;
+  sessionId?: string;
+  tab?: string;
 }
 
 export function useNavigationState() {
   useAgentRouteState<NavigationState>({
     browserTabId: TAB_ID,
     requestSource: TAB_ID,
-    getNavigationState: ({ pathname }) => navigationStateForPath(pathname),
+    getNavigationState: ({ pathname, searchParams }) =>
+      navigationStateForPath(pathname, searchParams),
     getCommandPath: commandPathForNavigation,
   });
 }
@@ -62,17 +65,38 @@ function matchesPathPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-export function navigationStateForPath(pathname: string): NavigationState {
+export function navigationStateForPath(
+  pathname: string,
+  searchParams?: URLSearchParams,
+): NavigationState {
   const threadId = threadIdFromPath(pathname);
+  const sessionId = floorSessionIdFromPath(pathname);
+  const tab = sessionId ? (searchParams?.get("tab") ?? "board") : null;
   return {
     view: viewForPath(pathname),
     path: pathname,
     publicPath: appPathFromLocalRoute(pathname),
     ...(threadId ? { threadId } : {}),
+    ...(sessionId ? { sessionId } : {}),
+    ...(tab ? { tab } : {}),
   };
 }
 
+function floorSessionIdFromPath(pathname: string): string | null {
+  const encoded = pathname.match(/^\/(?:floor|stage)\/([^/]+)/)?.[1];
+  if (!encoded) return null;
+  try {
+    return decodeURIComponent(encoded);
+    // coercion-ok: a malformed percent-encoding is not a session id.
+  } catch {
+    return null;
+  }
+}
+
 function viewForPath(pathname: string): string {
+  if (pathname.startsWith("/stage/")) return "stage";
+  if (pathname === "/floor" || pathname === "/floor/") return "floor";
+  if (pathname.startsWith("/floor/")) return "session";
   if (isChatPathname(pathname)) return "chat";
   if (pathname === HOME_PATH) return "home";
   if (pathname.startsWith("/database")) return "database";
@@ -93,6 +117,8 @@ function pathForView(view?: string): string {
       return NEW_CHAT_PATH;
     case "home":
       return HOME_PATH;
+    case "floor":
+      return "/floor";
     case "database":
       return "/database";
     case "extensions":
@@ -111,6 +137,12 @@ function pathForView(view?: string): string {
 }
 
 export function pathForCommand(command: any): string {
+  const sessionId =
+    typeof command?.sessionId === "string" ? command.sessionId.trim() : "";
+  if (sessionId && (command?.view === "session" || command?.view === "stage")) {
+    const encoded = encodeURIComponent(sessionId);
+    return command.view === "stage" ? `/stage/${encoded}` : `/floor/${encoded}`;
+  }
   const path = pathForView(command?.view);
   if (command?.view !== "chat" && command?.view !== "ask") return path;
   const threadId =

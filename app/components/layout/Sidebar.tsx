@@ -19,6 +19,7 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconLoader2,
+  IconMicrophone2,
   IconSearch,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
@@ -117,15 +118,24 @@ function persistActiveThreadId(threadId: string) {
   } catch {}
 }
 
-function HomeNavLink({ collapsed }: { collapsed: boolean }) {
-  const t = useT();
-  const location = useLocation();
-  const active = location.pathname === HOME_PATH;
+function NavItem({
+  collapsed,
+  to,
+  label,
+  icon: Icon,
+  active,
+}: {
+  collapsed: boolean;
+  to: string;
+  label: string;
+  icon: typeof IconHome;
+  active: boolean;
+}) {
   const link = (
     <Link
-      to={HOME_PATH}
+      to={to}
       aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? t("navigation.home") : undefined}
+      aria-label={collapsed ? label : undefined}
       className={cn(
         "flex items-center text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         active && "bg-sidebar-accent",
@@ -134,10 +144,8 @@ function HomeNavLink({ collapsed }: { collapsed: boolean }) {
           : "h-8 w-full gap-3 rounded-lg px-3 text-sm font-medium",
       )}
     >
-      <IconHome className="size-4 shrink-0" strokeWidth={1.8} />
-      <span className={collapsed ? "sr-only" : "truncate"}>
-        {t("navigation.home")}
-      </span>
+      <Icon className="size-4 shrink-0" strokeWidth={1.8} />
+      <span className={collapsed ? "sr-only" : "truncate"}>{label}</span>
     </Link>
   );
 
@@ -145,12 +153,35 @@ function HomeNavLink({ collapsed }: { collapsed: boolean }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>{link}</TooltipTrigger>
-        <TooltipContent side="right">{t("navigation.home")}</TooltipContent>
+        <TooltipContent side="right">{label}</TooltipContent>
       </Tooltip>
     );
   }
 
   return <div className="px-2">{link}</div>;
+}
+
+function PrimaryNav({ collapsed }: { collapsed: boolean }) {
+  const t = useT();
+  const { pathname } = useLocation();
+  return (
+    <div className="flex flex-col gap-0.5">
+      <NavItem
+        collapsed={collapsed}
+        to="/floor"
+        label={t("floor.nav")}
+        icon={IconMicrophone2}
+        active={pathname === "/floor" || pathname.startsWith("/floor/")}
+      />
+      <NavItem
+        collapsed={collapsed}
+        to={HOME_PATH}
+        label={t("navigation.home")}
+        icon={IconHome}
+        active={pathname === HOME_PATH}
+      />
+    </div>
+  );
 }
 
 function ChatThreadsSection({ collapsed }: { collapsed: boolean }) {
@@ -407,7 +438,7 @@ export function Sidebar({
           collapsed ? "items-center gap-1 px-1 py-2" : "pt-1",
         )}
       >
-        <HomeNavLink collapsed={collapsed} />
+        <PrimaryNav collapsed={collapsed} />
         <ChatThreadsSection collapsed={collapsed} />
       </nav>
 
