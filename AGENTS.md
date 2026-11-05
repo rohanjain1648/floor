@@ -31,3 +31,24 @@ Use `adding-a-feature` for functional parity and `frontend-design` for a user-fa
 Before building common workspace or agent UI, read `agent-native-toolkit`; for supported customization, read `customizing-agent-native`.
 
 - Guarded verification: run `pnpm agent-native:doctor`; fix findings before done.
+
+## Floor
+
+Live audience Q&A with an agent co-moderator. `/floor` lists sessions; `/floor/:sessionId?tab=board|briefing|recap` is the moderator board; `/stage/:sessionId` is the projector view; `/j/:code` is the public audience page (no login).
+
+- Questions belong to a session and inherit its access. Duplicates point at one canonical question (`duplicateOf`); their votes roll up.
+- Agent answers are drafts. Only a person can publish (`needs_host_approval`); never retry publishing, tell the moderator a draft is waiting.
+- Draft answers only from the session briefing. Read `.agents/skills/co-moderation/SKILL.md` before triaging, pulses or recaps.
+- `navigation` adds `sessionId` and `tab`; `selection` is `{ kind: "floor.question", sessionId, questionId }`.
+- Event `floor.question.submitted` fires per audience question for automations.
+
+| Action | Purpose |
+|---|---|
+| list-sessions | Sessions with counts |
+| create-session | New session + join code |
+| get-session | Session, stats, questions (`include=untriaged` for new work) |
+| triage-questions | Batch merge/theme/queue/hide/rank/draft |
+| update-question | Patch one question; publish answers (people only) |
+| set-stage | Show a question on stage; previous one becomes answered |
+| update-session | Title, briefing, status, autopilot, pulse, recap |
+| submit-question | Add a question for someone (room mic) |
